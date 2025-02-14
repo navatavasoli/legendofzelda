@@ -1,0 +1,236 @@
+# ICS201 CPT
+# Nava Tavasoli
+# June 24, 2021
+
+# importing Pygame and time
+import pygame
+import time
+
+# Pygame font and mixer initialization
+pygame.font.init()
+pygame.mixer.init()
+
+# Introductory text prompting user confirmation to begin, as well as instructing them on how to play the second half of the game (due to a change in mechanics)
+print("\033[0;37;48m You are suddenly transported to a dark void. You cannot see anything beyond darkness. You begin to feel afraid, as if something were watching you.")
+time.sleep(2)
+print("\033[0;37;48m You see a green spark flickering through the darkness. As it draws closer, you make out the shape of a familiar figure.")
+time.sleep(2)
+print("\033[0;35;48m Link! It's you again!")
+time.sleep(2)
+print("\033[0;32;48m Zelda! You did it! You collected all of the chests!")
+time.sleep(2)
+print("\033[0;37;48m Link begins to speak to you. He instructs you on what you are about to face. You feel adrenaline rushing through your veins, and your "
+      "heart begins to pound.")
+time.sleep(2)
+print("\033[0;32;48m Now, we have another thing to deal with... Ganon!! I'm sure you remember him.")
+time.sleep(2)
+print("\033[0;32;48m In a few short moments, you will be transported to Ganon's realm When you are there, you must prepare to fight!")
+time.sleep(2)
+print("\033[0;32;48m You collected a bow, arrows, food, and a fairy from the chests. Now, you must use them against Ganon!")
+time.sleep(2)
+print("\033[0;32;48m You must prepare to shoot at Ganon using your left 'control' button.")
+time.sleep(2)
+print("\033[0;32;48m Both your health and Ganon's health can be seen on the upper corners of your screen.")
+time.sleep(2)
+print("\033[0;32;48m You can use the A, S, W, and D keys to navigate.")
+time.sleep(2)
+print("\033[0;37;48m This part of the game is capable of supporting gameplay from two people!")
+print("\033[0;37;48m If someone chooses to play as Ganon, they can use the arrow keys to move from the bottom right corner up to the main screen.")
+print("\033[0;32;48m Now, Zelda... are you ready?")
+time.sleep(2)
+print("\033[0;32;48m Although, I warn you... it's not going to be an easy fight. There is only one place Ganon will take damage when hit by. You must find it!")
+time.sleep(3)
+confirmation = input("When you are prepared to fight Ganon, type the word 'ready': ").lower()
+if confirmation == "ready":
+    print("\033[0;32;48m Princess, I knew you could do it! Give it your alL! I will be watching you do it!")
+    time.sleep(2)
+elif confirmation != "ready":
+    print("\033[0;32;48m I see, not a problem! I'll just be waiting... it's not like I have anywhere to go anyways! I'm captured... haha... well, until your return!")
+    time.sleep(2)
+    exit(0)
+
+# defining a function for music
+def battle_music():
+    pygame.mixer.music.load("Battle Music.mp3")
+    pygame.mixer.music.play(-1, 0.0)
+
+# creating a window for the game
+WIDTH = 900
+HEIGHT = 500
+WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("The Legend of Zelda: Zelda's Awakening // Stage 2")
+
+# defining colours, and assigning RGB values
+# they are capitalized to signify that they are constant variables
+WHITE = (255, 255, 255)
+RED = (255, 250, 240)
+YELLOW = (255, 250, 240)
+
+# fonts for health and winner messages
+HEALTH_FONT = pygame.font.SysFont('comicsans', 40)
+WINNER_FONT = pygame.font.SysFont('comicsans', 100)
+
+# defining variables to use in the while loop later on
+# frames per second (rate at which the screen changes)
+FPS = 60
+# speed of the game's FPS
+VELOCITY = 5
+# speed of the arrows when shot
+ARROW_SPEED = 7
+TOTAL_ARROWS = 3
+# Zelda's character's width and height boundaries
+ZELDA_WIDTH, ZELDA_HEIGHT = 60, 60
+# Ganon's character's width and height boundaries
+GANON_WIDTH, GANON_HEIGHT = 320, 320
+
+# Values that correspond to changing the health when characters are hit by each other (userevent) in-game
+ZELDA_HIT = pygame.USEREVENT + 1
+GANON_HIT = pygame.USEREVENT + 2
+
+# Loading images of Zelda
+ZELDA_IMAGE = pygame.transform.scale(pygame.image.load('Zelda.png'), (60, 60))
+ZELDA = pygame.transform.rotate(pygame.transform.scale(
+    ZELDA_IMAGE, (ZELDA_WIDTH, ZELDA_HEIGHT)), 0)
+
+# Loading images of Ganon
+GANON_IMAGE = pygame.transform.scale(pygame.image.load('Ganon.png'), (900, 500))
+GANON = pygame.transform.rotate(pygame.transform.scale(
+    GANON_IMAGE, (GANON_WIDTH, GANON_HEIGHT)), 0)
+
+# Loading battle scene image
+BATTLE_SCENE = pygame.transform.scale(pygame.image.load('space.png'), (900, 500))
+
+# creating rectangular borders around Zelda and Ganon for calculating the times they are shot at
+ganon = pygame.Rect(700, 300, ZELDA_WIDTH, ZELDA_HEIGHT)
+zelda = pygame.Rect(100, 300, ZELDA_WIDTH, ZELDA_HEIGHT)
+
+# Ganon and Zelda's arrows in blank lists for the purpose of adding in arrows
+ganon_arrows = []
+zelda_arrows = []
+
+# the number of hearts allocated to both characters (ie. if they are hit 10 times, the other wins)
+ganon_hearts = 10
+zelda_hearts = 10
+
+# calling upon the music function to begin playing before the while loop
+battle_music()
+
+# the clock function is called upon as a subsidiary of the time function
+clock = pygame.time.Clock()
+
+# creating a condition for the while loop to check in order to begin the main code
+run = True
+
+# beginning of the main code
+while run:
+    clock.tick(FPS)
+    # checking for quitting
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+            pygame.quit()
+
+        # checking for user interface interactions
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LCTRL and len(zelda_arrows) < TOTAL_ARROWS:
+                # creating a way for bullets to leave Zelda from the middle of her body
+                bullet = pygame.Rect(
+                    zelda.x + zelda.width, zelda.y + zelda.height // 2 - 2, 10, 5)
+                # the append function adds 1 to the bullet list that was defined above to count bullets used
+                zelda_arrows.append(bullet)
+
+            if event.key == pygame.K_RCTRL and len(ganon_arrows) < TOTAL_ARROWS:
+                # creating a way for bullets to leave Ganon from the middle of his body
+                bullet = pygame.Rect(
+                    ganon.x, ganon.y + ganon.height // 2 - 2, 10, 5)
+                # see line 127
+                ganon_arrows.append(bullet)
+
+        if event.type == GANON_HIT:
+            # if Ganon is hit, he will lose a heart
+            ganon_hearts -= 1
+
+        if event.type == ZELDA_HIT:
+            # if Zelda is hit, she will lose a heart
+            zelda_hearts -= 1
+
+    # defining winner_text so that the variable can be changed depending on the condition (ie. either Zelda or Ganon win)
+    winner_text = ""
+    if ganon_hearts <= 0:
+        winner_text = "Zelda Wins!"
+
+    if zelda_hearts <= 0:
+        winner_text = "Ganon Wins!"
+
+    if winner_text != "":
+        draw_text = WINNER_FONT.render(winner_text, True, WHITE)
+        WIN.blit(draw_text, (WIDTH / 2 - draw_text.get_width() /
+                             2, HEIGHT / 2 - draw_text.get_height() / 2))
+        pygame.display.update()
+        pygame.time.delay(3000)
+        break
+
+    keys_pressed = pygame.key.get_pressed()
+
+    # creating Zelda's movement depending on what keys are pressed (A, S, D, W)
+    if keys_pressed[pygame.K_a] and zelda.x - VELOCITY > 0:  # LEFT
+        zelda.x -= VELOCITY
+    if keys_pressed[pygame.K_d] and zelda.x + VELOCITY + zelda.width < WIDTH:  # RIGHT
+        zelda.x += VELOCITY
+    if keys_pressed[pygame.K_w] and zelda.y - VELOCITY > 0:  # UP
+        zelda.y -= VELOCITY
+    if keys_pressed[pygame.K_s] and zelda.y + VELOCITY + zelda.height < HEIGHT:  # DOWN
+        zelda.y += VELOCITY
+
+    # creating Ganon's movement depending on what keys are pressed (arrow keys)
+    if keys_pressed[pygame.K_LEFT] and ganon.x - VELOCITY > 0:  # LEFT
+        ganon.x -= VELOCITY
+    if keys_pressed[pygame.K_RIGHT] and ganon.x + VELOCITY + ganon.width < WIDTH:  # RIGHT
+        ganon.x += VELOCITY
+    if keys_pressed[pygame.K_UP] and ganon.y - VELOCITY > 0:  # UP
+        ganon.y -= VELOCITY
+    if keys_pressed[pygame.K_DOWN] and ganon.y + VELOCITY + ganon.height < HEIGHT:  # DOWN
+        ganon.y += VELOCITY
+
+
+    for arrow in zelda_arrows:
+        arrow.x += ARROW_SPEED
+        # if an arrow collides with Ganon, he will get a hit, znd Zelda will have an arrow removed
+        if ganon.colliderect(arrow):
+            pygame.event.post(pygame.event.Event(GANON_HIT))
+            zelda_arrows.remove(arrow)
+        # if an arrow does not touch Ganon, Zelda loses one of her arrows
+        elif arrow.x > WIDTH:
+            zelda_arrows.remove(arrow)
+
+    # the comments above apply to this line of code as well
+    for arrow in ganon_arrows:
+        arrow.x -= ARROW_SPEED
+        if zelda.colliderect(arrow):
+            pygame.event.post(pygame.event.Event(ZELDA_HIT))
+            ganon_arrows.remove(arrow)
+        elif arrow.x < 0:
+            ganon_arrows.remove(arrow)
+
+    # the background of the screen blits again
+    WIN.blit(BATTLE_SCENE, (0, 0))
+
+    # adding text that creates Ganon's "health bar" (ie. the text that shows how many hearts Ganon has)
+    ganon_heart_text = HEALTH_FONT.render(
+        "Ganon's Hearts: " + str(ganon_hearts), True, WHITE)
+    # adding text that creates Zelda's "health bar" (ie. the text that shows how many hearts Zelda has)
+    zelda_heart_text = HEALTH_FONT.render(
+        "Zelda's Hearts: " + str(zelda_hearts), True, WHITE)
+    WIN.blit(ganon_heart_text, (WIDTH - ganon_heart_text.get_width() - 10, 10))
+    WIN.blit(zelda_heart_text, (10, 10))
+    WIN.blit(ZELDA, (zelda.x, zelda.y))
+    WIN.blit(GANON, (ganon.x, ganon.y))
+
+    for bullet in ganon_arrows:
+        pygame.draw.rect(WIN, RED, bullet)
+
+    for bullet in zelda_arrows:
+        pygame.draw.rect(WIN, YELLOW, bullet)
+
+    # code to update the screen to ensure graphics and FPS are intact throughout the game
+    pygame.display.update()
